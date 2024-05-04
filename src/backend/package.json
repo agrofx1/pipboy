@@ -1,0 +1,26 @@
+{
+  "name": "pipboy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.13.0",
+    "bcrypt": "^5.1.1",
+    "bootstrap": "^5.3.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "joi": "^17.13.1",
+    "pino": "^8.19.0",
+    "pino-pretty": "^10.3.1",
+    "sqlite3": "^5.1.7-rc.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.13.0"
+  }
+}
