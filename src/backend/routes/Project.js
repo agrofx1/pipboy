@@ -11,7 +11,8 @@ const {
 	deleteTasks,
 	getPermission,
 	checkAuth,
-	createProject
+	createProject,
+    getTasksStats
 } = require("../database");
 const Joi = require("joi");
 
@@ -30,8 +31,16 @@ router.use(cookieParser());
 
 router.get("/all", async (req, res) => {
 	try {
+        let response = []
 		let projects = await getProjects(true);
-		res.json(projects);
+        for (let project of projects) {
+            let precent = await getTasksStats(project.id)
+            response.push({
+                ...project,
+                done: precent
+            })
+        }
+		res.json(response);
 	} catch {
 		res.status(500).json({ success: false });
 	}

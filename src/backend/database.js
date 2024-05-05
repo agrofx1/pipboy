@@ -60,6 +60,24 @@ const getTasks = async (project) => {
     return tasks
 }
 
+const getTasksStats = async (project) => {
+    let tasks = await prisma.tasks.findMany({
+        where: {
+            project: project
+        }
+    })
+    let done = await prisma.tasks.findMany({
+        where: {
+            project: project,
+            status: "done"
+        }
+    })
+    if (tasks == 0 && done == 0) {
+        return 0
+    }
+    return Math.round(done / tasks)
+}
+
 const getTask = async (id, project) => {
     let tasks = await prisma.tasks.findFirst({
         where: {
@@ -172,4 +190,4 @@ const createSession = async (session, user) => {
     })
 }
 
-module.exports = { getProjects, getProject, createProject, deleteProject, archiveProject, getTasks, getTask, createTask, updateTask, deleteTask, deleteTasks, getPermission, checkAuth, getUser, createUser, createSession }
+module.exports = { getProjects, getProject, createProject, deleteProject, archiveProject, getTasks, getTasksStats, getTask, createTask, updateTask, deleteTask, deleteTasks, getPermission, checkAuth, getUser, createUser, createSession }
