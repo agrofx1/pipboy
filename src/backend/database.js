@@ -146,10 +146,10 @@ const checkAuth = async (currentsession) => {
 			session: currentsession,
 		},
 	});
-	if (session != []) {
+	if (session != null) {
 		let user = await prisma.users.findFirst({
 			where: {
-				id: session.id,
+				id: session.auth,
 			},
 		});
 		if (user != null) {

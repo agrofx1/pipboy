@@ -12,7 +12,7 @@ const {
 	getPermission,
 	checkAuth,
 	createProject,
-    getTasksStats
+	getTasksStats,
 } = require("../database");
 const Joi = require("joi");
 
@@ -31,15 +31,15 @@ router.use(cookieParser());
 
 router.get("/all", async (req, res) => {
 	try {
-        let response = []
+		let response = [];
 		let projects = await getProjects(true);
-        for (let project of projects) {
-            let precent = await getTasksStats(project.id)
-            response.push({
-                ...project,
-                done: precent
-            })
-        }
+		for (let project of projects) {
+			let precent = await getTasksStats(project.id);
+			response.push({
+				...project,
+				precent: precent,
+			});
+		}
 		res.json(response);
 	} catch {
 		res.status(500).json({ success: false });
@@ -81,7 +81,7 @@ router.get("/:id", async (req, res) => {
 			if (auth !== false) {
 				let permission = await getPermission();
 				if (permission != null || project.owner === auth) {
-					getTasks(parseInt(req.params.id));
+					let tasks = await getTasks(parseInt(req.params.id));
 					res.json({
 						name: project.name,
 						tasks: tasks,
@@ -122,7 +122,7 @@ router.post("/:id/:taskid/work", async (req, res) => {
 						}
 					} else {
 						res.status(401).json({ success: false });
-					}ho
+					}
 				}
 			} else {
 				res.status(404).json({ success: false });
