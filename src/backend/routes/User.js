@@ -8,6 +8,7 @@ const {
 	createSession,
 	getUser,
 	getUserProjects,
+	getUserSafe,
 } = require("../database");
 
 const login = Joi.object({
@@ -81,6 +82,24 @@ router.get("/projects", async (req, res) => {
 		if (auth !== false) {
 			let projects = await getUserProjects(auth);
 			res.json(projects);
+		} else {
+			res.status(401).json({ success: false });
+		}
+	} catch {
+		res.status(500).json({ success: false });
+	}
+});
+
+router.get("/current", async (req, res) => {
+	try {
+		let auth = await checkAuth(req.cookies.session);
+		if (auth !== false) {
+			let user = await getUserSafe(auth);
+			if (user != null) {
+				res.json(user);
+			} else {
+				res.status(403).json({ success: false });
+			}
 		} else {
 			res.status(401).json({ success: false });
 		}

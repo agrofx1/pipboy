@@ -218,6 +218,20 @@ const getUsers = async () => {
 	return users;
 };
 
+const getUserSafe = async (id) => {
+	let user = await prisma.users.findFirst({
+		where: {
+			id: id,
+		},
+		select: {
+			id,
+			name,
+			email,
+		},
+	});
+	return user;
+};
+
 module.exports = {
 	getProjects,
 	getProject,
@@ -238,4 +252,5 @@ module.exports = {
 	createSession,
 	getUserProjects,
 	getUsers,
+	getUserSafe,
 };
