@@ -79,13 +79,13 @@ const getTasksStats = async (project) => {
 };
 
 const getTask = async (id, project) => {
-	let tasks = await prisma.tasks.findFirst({
+	let task = await prisma.tasks.findFirst({
 		where: {
 			id: id,
 			project: project,
 		},
 	});
-	return tasks;
+	return task;
 };
 
 const createTask = async (data, project) => {

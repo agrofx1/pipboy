@@ -13,6 +13,7 @@ const {
 	checkAuth,
 	createProject,
 	getTasksStats,
+	createTask,
 } = require("../database");
 const Joi = require("joi");
 
@@ -83,7 +84,10 @@ router.get("/:id", async (req, res) => {
 				if (permission != null || project.owner === auth) {
 					let tasks = await getTasks(parseInt(req.params.id));
 					res.json({
+						id: project.id,
 						name: project.name,
+						maintained: project.maintained,
+						owner: project.owner,
 						tasks: tasks,
 					});
 				} else {
@@ -170,7 +174,7 @@ router.post("/:id/:taskid/done", async (req, res) => {
 
 router.post("/:id/create", async (req, res) => {
 	try {
-		let project = await getProject(req.params.id);
+		let project = await getProject(parseInt(req.params.id));
 		if (project != null && project.maintained == true) {
 			let auth = await checkAuth(req.cookies.session);
 			if (auth !== false) {
@@ -179,7 +183,7 @@ router.post("/:id/create", async (req, res) => {
 					try {
 						let isValid = await taskscheme.validateAsync(req.body);
 						if (isValid) {
-							await createTask(req.body, req.params.id);
+							await createTask(req.body, parseInt(req.params.id));
 							res.json({ success: true });
 						}
 					} catch {
@@ -201,15 +205,22 @@ router.post("/:id/create", async (req, res) => {
 
 router.delete("/:id/:taskid/delete", async (req, res) => {
 	try {
-		let project = await getProject(req.params.id);
+		let project = await getProject(parseInt(req.params.id));
 		if (project != null && project.maintained == true) {
-			let task = await getTask(req.params.id, req.params.taskid);
+			let task = await getTask(
+				parseInt(req.params.taskid),
+				parseInt(req.params.id)
+			);
+			console.log(task);
 			if (task != null) {
 				let auth = await checkAuth(req.cookies.session);
 				if (auth !== false) {
 					let permission = await getPermission(auth, project.id);
 					if (permission != null || project.owner === auth) {
-						await deleteTask(req.params.taskid, req.params.id);
+						await deleteTask(
+							parseInt(req.params.taskid),
+							parseInt(req.params.id)
+						);
 						res.json({ success: true });
 					} else {
 						res.status(403).json({ success: false });
@@ -229,27 +240,27 @@ router.delete("/:id/:taskid/delete", async (req, res) => {
 });
 
 router.delete("/:id/delete", async (req, res) => {
-	try {
-		let project = await getProject(req.params.id);
-		if (project != null) {
-			let auth = await checkAuth(req.cookies.session);
-			if (auth === false) {
-				res.status(401).json({ success: false });
-			} else {
-				if (project.owner === auth) {
-					await deleteProject(req.params.id);
-					await deleteTasks(req.params.id);
-					res.json({ success: true });
-				} else {
-					res.status(403).json({ success: false });
-				}
-			}
+	// try {
+	let project = await getProject(parseInt(req.params.id));
+	if (project != null) {
+		let auth = await checkAuth(req.cookies.session);
+		if (auth === false) {
+			res.status(401).json({ success: false });
 		} else {
-			res.status(404).json({ success: false });
+			if (project.owner === auth) {
+				await deleteProject(parseInt(req.params.id));
+				await deleteTasks(parseInt(req.params.id));
+				res.json({ success: true });
+			} else {
+				res.status(403).json({ success: false });
+			}
 		}
-	} catch {
-		res.status(500).json({ success: false });
+	} else {
+		res.status(404).json({ success: false });
 	}
+	// } catch {
+	// 	res.status(500).json({ success: false });
+	// }
 });
 
 router.get("/:id/archive", async (req, res) => {
