@@ -141,6 +141,9 @@ const getPermission = async (user, project) => {
 };
 
 const checkAuth = async (currentsession) => {
+	if (currentsession == undefined) {
+		return false;
+	}
 	let session = await prisma.sessions.findFirst({
 		where: {
 			session: currentsession,
@@ -149,7 +152,7 @@ const checkAuth = async (currentsession) => {
 	if (session != null) {
 		let user = await prisma.users.findFirst({
 			where: {
-				id: session.auth,
+				id: session.user,
 			},
 		});
 		if (user != null) {
@@ -242,6 +245,9 @@ const getUsers = async () => {
 
 const getUserSafe = async (id) => {
 	let user = await prisma.users.findFirst({
+		where: {
+			id: id,
+		},
 		select: {
 			id: true,
 			name: true,
