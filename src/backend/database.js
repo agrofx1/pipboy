@@ -241,7 +241,7 @@ const getUsers = async () => {
 };
 
 const getUserSafe = async (id) => {
-	let user = await prisma.users.findMany({
+	let user = await prisma.users.findFirst({
 		select: {
 			id: true,
 			name: true,
