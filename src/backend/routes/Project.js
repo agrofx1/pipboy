@@ -23,7 +23,7 @@ const taskscheme = Joi.object({
 	note: Joi.string(),
 });
 const projectscheme = Joi.object({
-	name: Joi.string().min(3).required(),
+	title: Joi.string().min(3).required(),
 	users: Joi.array().required(),
 });
 

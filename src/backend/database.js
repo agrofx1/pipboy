@@ -171,6 +171,26 @@ const getUser = async (email) => {
 	return user;
 };
 
+const getUserById = async (id) => {
+	let user = await prisma.users.findFirst({
+		where: {
+			id: id,
+		},
+	});
+	return user;
+};
+
+const updatePassword = async (id, password) => {
+	await prisma.users.update({
+		where: {
+			id: id,
+		},
+		data: {
+			password: password,
+		},
+	});
+};
+
 const createUser = async (name, email, password) => {
 	let user = await prisma.users.create({
 		data: {
@@ -211,22 +231,22 @@ const getUserProjects = async (id) => {
 const getUsers = async () => {
 	let users = await prisma.users.findMany({
 		select: {
-			id,
-			name,
+			id: true,
+			name: true,
+			email: false,
+			password: false,
 		},
 	});
 	return users;
 };
 
 const getUserSafe = async (id) => {
-	let user = await prisma.users.findFirst({
-		where: {
-			id: id,
-		},
+	let user = await prisma.users.findMany({
 		select: {
-			id,
-			name,
-			email,
+			id: true,
+			name: true,
+			email: true,
+			password: false,
 		},
 	});
 	return user;
@@ -248,9 +268,11 @@ module.exports = {
 	getPermission,
 	checkAuth,
 	getUser,
+	getUserById,
 	createUser,
 	createSession,
 	getUserProjects,
 	getUsers,
 	getUserSafe,
+	updatePassword,
 };
