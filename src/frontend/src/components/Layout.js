@@ -34,7 +34,7 @@ export const Layout = (props) => {
 						</li>
 						<li
 							className={
-								pathname.includes('/project')
+								pathname.includes("/project")
 									? "nav-item active"
 									: "nav-item"
 							}
@@ -45,7 +45,9 @@ export const Layout = (props) => {
 						</li>
 						<li
 							className={
-								pathname === "/login" || pathname === "/profile"
+								pathname === "/login" ||
+								pathname === "/profile" ||
+								pathname === "/register"
 									? "nav-item active"
 									: "nav-item"
 							}

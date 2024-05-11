@@ -10,15 +10,33 @@ export const Projects = (props) => {
 	const [projects, setProjects] = useState([]);
 	const [isProjectsLoading, setIsProjectsLoading] = useState(true);
 
+	const [users, setUsers] = useState([]);
+	const [selectedUsers, setSelectedUsers] = useState([]);
+	const [isUsersLoading, setIsUsersLoading] = useState(true);
+
+	const [user, setUser] = useState(null);
+
 	const [isCreatingProject, setIsCreatingProject] = useState(false);
 
 	async function fetchData() {
 		setProjects([]);
-		setIsProjectsLoading(true);
 		try {
-			let json = await axios.get("/api/v1/all");
-			setProjects(json.data);
+			let projectsjson = await axios.get("/api/v1/project/all");
+			setProjects(projectsjson.data);
 			setIsProjectsLoading(false);
+			let userjson = await axios.get("/api/v1/user/current");
+			setUser(userjson.data);
+		} catch {}
+	}
+
+	async function fetchUsers() {
+		setIsUsersLoading(true);
+		try {
+			let usersjson = await axios.get("/api/v1/user/all");
+			let data = usersjson.data.filter(({ id }) => id != user.id);
+			console.log(data);
+			setUsers(data);
+			setIsUsersLoading(false);
 		} catch {}
 	}
 
@@ -26,20 +44,18 @@ export const Projects = (props) => {
 		fetchData();
 		setInterval(() => {
 			fetchData();
-		}, 3000);
+		}, 5000);
 	}, []);
 
 	async function createProject() {
 		if (
 			document.getElementById("projectTitle").value != "" &&
-			document.getElementById("projectTitle").value != undefined &&
-			document.getElementById("projectUsers").value != "" &&
-			document.getElementById("projectUsers").value != undefined
+			document.getElementById("projectTitle").value != undefined
 		) {
 			setIsCreatingProject(false);
-			await axios.post("/api/v1/addProject/", {
+			await axios.post("/api/v1/project/create/", {
 				title: document.getElementById("projectTitle").value,
-				user: document.getElementById("projectUsers").value,
+				users: selectedUsers,
 			});
 			fetchData();
 		}
@@ -67,7 +83,51 @@ export const Projects = (props) => {
 				</div>
 				<div className="mb-3">
 					<label className="form-label">Ответственные</label>
-					<textarea className="form-control" id="projectUsers" />
+					<p>
+						Выбранные пользователи:
+						{(() => {
+							let list = [];
+							selectedUsers.forEach((user) => {
+								list.push(user.name);
+							});
+							return list.toString();
+						})()}
+					</p>
+					<div
+						className="profile"
+						id="users"
+						style={{ height: "5rem" }}
+					>
+						{isUsersLoading ? (
+							<ScaleLoader color="#14fe17" />
+						) : (
+							<ul className="spc-list">
+								{users.map((user) => (
+									<li
+										key={user.id}
+										onClick={() => {
+											let newusers = users.filter(
+												(newuser) =>
+													newuser.id != user.id
+											);
+											setUsers(newusers);
+											setSelectedUsers([
+												...users,
+												{
+													id: user.id,
+													name: user.name,
+												},
+											]);
+										}}
+									>
+										<p className="sp-perception">
+											{user.name}
+										</p>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
 				</div>
 				<button
 					className="btn btn-success m-2"
@@ -87,18 +147,21 @@ export const Projects = (props) => {
 				</button>
 			</ReactModal>
 			<div className="container">
-				<div className="d-flex justify-content-evenly text-center">
+				<div className="d-flex justify-content-evenly text-center align-items-center">
 					<h1>Проекты 1.15</h1>
-					<div
-						role="button"
-						className="d-flex align-items-center"
-						onClick={() => {
-							setIsCreatingProject(true);
-						}}
-					>
-						<h2>Добавить проект</h2>
-						<img src={addIcon} className="icon" />
-					</div>
+					{user != null && (
+						<div
+							role="button"
+							className="d-flex align-items-center button"
+							onClick={() => {
+								fetchUsers();
+								setIsCreatingProject(true);
+							}}
+						>
+							<h2>Добавить проект</h2>
+							<img src={addIcon} className="icon" />
+						</div>
+					)}
 				</div>
 				<hr className="hr" />
 				<div className="row">

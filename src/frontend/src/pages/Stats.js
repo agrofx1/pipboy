@@ -8,7 +8,7 @@ export const Stats = (props) => {
 
 	async function fetchData() {
 		try {
-			let json = await axios.get("/api/v1/all");
+			let json = await axios.get("/api/v1/project/all");
 			setStats(json.data);
 			setIsStatsLoading(false);
 		} catch {}
@@ -16,6 +16,9 @@ export const Stats = (props) => {
 
 	useEffect(() => {
 		fetchData();
+		setInterval(() => {
+			fetchData();
+		}, 5000);
 	}, []);
 
 	return (
@@ -40,18 +43,12 @@ export const Stats = (props) => {
 								</thead>
 								<tbody id="pr">
 									{stats.map((project) => {
-										let precent = 0;
-										if (project.tasks != 0) {
-											precent = Math.round(
-												(project.doneTasks / project.tasks) * 100
-											);
-										} else {
-											precent = 0;
-										}
 										return (
 											<tr className="project-row">
-												<th scope="row">{project.name}</th>
-												<td>{precent}%</td>
+												<th scope="row">
+													{project.name}
+												</th>
+												<td>{project.precent}%</td>
 												<td>{project.user}</td>
 											</tr>
 										);

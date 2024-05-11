@@ -14,7 +14,7 @@ html::after {
 	height: 100%;
 	width: 100%;
 	content: "";
-	position: absolute;
+	position: fixed;
 	top: 0;
 	left: 0;
 	background: repeating-linear-gradient(
@@ -502,6 +502,7 @@ th {
 }
 .sec {
 	font-size: 2rem;
+	text-align: center;
 }
 .container .row {
 	margin-bottom: 80px;
@@ -509,21 +510,52 @@ th {
 .col {
 	width: 33%;
 }
-form {
+.form {
 	margin: 10% 30%;
 }
-form h1 {
+.form h1 {
 	text-align: center;
 }
 .navbar-expand-sm {
 	flex-wrap: nowrap;
 	justify-content: flex-start;
 }
+.profile-page {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+.title {
+	text-align: center;
+	margin: 2%;
+}
+.profile {
+	padding: 3% 10%;
+	border: #14fe17 3px solid;
+	margin-inline: auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 1%;
+}
+.button {
+	padding: 20px;
+	border-radius: 3px;
+	border: #272b23 1px solid;
+}
+/* .navbar-expand.stat-footer {
+	backdrop-filter: blur(10px);
+} */
 @media (max-width: 480px) {
 	.col-3 {
 		width: 23%;
 	}
 	form {
 		margin: 10% 10%;
+	}
+}
+@media (hover: hover) {
+	.button:hover {
+		border: #14fe17 1px solid;
 	}
 }

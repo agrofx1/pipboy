@@ -6,72 +6,82 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { Task } from "../components/Task";
 import ReactModal from "react-modal";
+import { ScaleLoader } from "react-spinners";
 
 export const Project = (props) => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 
 	const [projectInfo, setProjectInfo] = useState("");
+	const [tasksCount, setTasksCount] = useState(1);
+	const [isProjectInfoLoading, setIsProjectInfoLoading] = useState(true);
 
-	const [notStarted, setNotStarted] = useState([]);
-	const [inProgress, setInProgress] = useState([]);
-	const [done, setDone] = useState([]);
+	const [backlogTasks, setBacklogTasks] = useState([]);
+	const [workTasks, setWorkTasks] = useState([]);
+	const [doneTasks, setDoneTasks] = useState([]);
 
-	const [deleteMessage, setDeleteMessage] = useState("")
+	const [errorMessage, setErrorMessage] = useState("");
 
 	const [isCreatingTask, setIsCreatingTask] = useState(false);
 	const [isArchivingProject, setIsArchivingProject] = useState(false);
-	const [isDeletingProject, setIsDeletingProject] = useState(false)
+	const [isDeletingProject, setIsDeletingProject] = useState(false);
 
 	async function fetchData() {
-		setNotStarted([]);
-		setInProgress([]);
-		setDone([]); 
-		let json = await axios.get(`/api/v1/project/${id}`);
-		setProjectInfo(json.data);
-		for (let task of json.data.list) {
-			if (task.status == "notStarted") {
-				setNotStarted((notStarted) => [
-					...notStarted,
-					<Task
-						title={task.title}
-						text={task.text}
-						projectId={task.projectId}
-						ukey={task.taskId}
-						status="notStarted"
-						cb={updateTask}
-						rm={removeTask}
-					/>,
-				]);
+		try {
+			setBacklogTasks([]);
+			setWorkTasks([]);
+			setDoneTasks([]);
+			let json = await axios.get(`/api/v1/project/${id}`);
+			setProjectInfo(json.data);
+			setTasksCount(json.data.tasks.length);
+			for (let task of json.data.tasks) {
+				if (task.status == "backlog") {
+					setBacklogTasks((backlogTasks) => [
+						...backlogTasks,
+						<Task
+							title={task.title}
+							text={task.note}
+							projectId={task.project}
+							ukey={task.id}
+							status="backlog"
+							cb={updateTask}
+							rm={removeTask}
+						/>,
+					]);
+				}
+				if (task.status == "work") {
+					setWorkTasks((workTasks) => [
+						...workTasks,
+						<Task
+							title={task.title}
+							text={task.note}
+							projectId={task.project}
+							ukey={task.id}
+							status="work"
+							cb={updateTask}
+							rm={removeTask}
+						/>,
+					]);
+				}
+				if (task.status == "done") {
+					setDoneTasks((done) => [
+						...done,
+						<Task
+							title={task.title}
+							text={task.note}
+							projectId={task.project}
+							ukey={task.id}
+							status="done"
+							cb={updateTask}
+							rm={removeTask}
+						/>,
+					]);
+				}
 			}
-			if (task.status == "inProgress") {
-				setInProgress((inProgress) => [
-					...inProgress,
-					<Task
-						title={task.title}
-						text={task.text}
-						projectId={task.projectId}
-						ukey={task.taskId}
-						status="inProgress"
-						cb={updateTask}
-						rm={removeTask}
-					/>,
-				]);
-			}
-			if (task.status == "done") {
-				setDone((done) => [
-					...done,
-					<Task
-						title={task.title}
-						text={task.text}
-						projectId={task.projectId}
-						ukey={task.taskId}
-						status="done"
-						cb={updateTask}
-						rm={removeTask}
-					/>,
-				]);
-			}
+			setIsProjectInfoLoading(false);
+		} catch (err) {
+			navigate("/projects");
+			console.log(err);
 		}
 	}
 
@@ -81,55 +91,46 @@ export const Project = (props) => {
 
 	async function addTask() {
 		if (
-			document.getElementById("taskTitle").value != "" &&
-			document.getElementById("taskTitle").value != undefined &&
-			document.getElementById("taskDescription").value != "" &&
-			document.getElementById("taskDescription").value != undefined
+			document.getElementById("taskTitle").value !== "" &&
+			document.getElementById("taskTitle").value !== undefined &&
+			document.getElementById("taskDescription").value !== "" &&
+			document.getElementById("taskDescription").value !== undefined
 		) {
 			setIsCreatingTask(false);
-			await axios.post(`/api/v1/addTask/`, {
-				id: id,
+			await axios.post(`/api/v1/project/${projectInfo.id}/create`, {
 				title: document.getElementById("taskTitle").value,
-				text: document.getElementById("taskDescription").value,
+				note: document.getElementById("taskDescription").value,
 			});
 			fetchData();
 		}
 	}
 	async function removeProject() {
-		let response = await axios.delete(`/api/v1/project/${id}/delete?code=${document.getElementById('deletecode').value}`);
-		if (response.data.success == true) {
-			if (projectInfo.maintained == "true") {
-				navigate("/projects")
+		let response = await axios.delete(`/api/v1/project/${id}/delete`);
+		if (response.status == 200) {
+			if (projectInfo.maintained === true) {
+				navigate("/projects");
 			} else {
-				navigate("/archive")
+				navigate("/archive");
 			}
-			
 		} else {
-			setDeleteMessage("Неправильный код доступа!")
+			setErrorMessage("Неправильный код доступа!");
 		}
-		
 	}
 	async function archiveProject() {
 		await axios.get(`/api/v1/project/${id}/archive`);
-		navigate("/archive")
+		navigate("/archive");
 	}
 	async function removeTask(projectId, key) {
-		await axios.get(
-			`/api/v1/project/${projectId}/delete/${key}`
-		);
+		await axios.delete(`/api/v1/project/${projectId}/${key}/delete`);
 		fetchData();
 	}
 	async function updateTask(projectId, key, status) {
-		if (status == "inProgress") {
-			await axios.get(
-				`/api/v1/project/${projectId}/${key}/inProgress`
-			);
+		if (status === "work") {
+			await axios.post(`/api/v1/project/${projectId}/${key}/work`);
 			fetchData();
 		}
-		if (status == "done") {
-			await axios.get(
-				`/api/v1/project/${projectId}/${key}/done`
-			);
+		if (status === "done") {
+			await axios.post(`/api/v1/project/${projectId}/${key}/done`);
 			fetchData();
 		}
 	}
@@ -189,34 +190,32 @@ export const Project = (props) => {
 					},
 				}}
 			>
-					<><div className="d-flex justify-content-center m-4">
-					<h2>Вы уверенны? Это действие необратимо!</h2>
-				</div>
-				<div className="mb-3">
-					<label className="form-label">Код доступа</label>
-					<input type="password" className="form-control" id="deletecode" />
-				</div>
-				{deleteMessage}
-				<div className="d-flex justify-content-center">
-					<button
-						type="button"
-						className="btn btn-success m-2"
-						onClick={() => {
-							removeProject();
-						}}
-					>
-						Удалить
-					</button>
-					<button
-						type="button"
-						className="btn btn-outline-success m-2"
-						onClick={() => {
-							setIsDeletingProject(false);
-						}}
-					>
-						Отмена
-					</button>
-				</div></>
+				<>
+					<div className="d-flex justify-content-center m-4">
+						<h2>Вы уверенны? Это действие необратимо!</h2>
+					</div>
+					{errorMessage}
+					<div className="d-flex justify-content-center">
+						<button
+							type="button"
+							className="btn btn-success m-2"
+							onClick={() => {
+								removeProject();
+							}}
+						>
+							Удалить
+						</button>
+						<button
+							type="button"
+							className="btn btn-outline-success m-2"
+							onClick={() => {
+								setIsDeletingProject(false);
+							}}
+						>
+							Отмена
+						</button>
+					</div>
+				</>
 			</ReactModal>
 			<ReactModal
 				isOpen={isArchivingProject}
@@ -257,56 +256,119 @@ export const Project = (props) => {
 				</div>
 			</ReactModal>
 			<div className="container">
-				<div className="d-flex justify-content-evenly text-center">
-					<h1 id="name">{projectInfo.name}</h1>
-					{projectInfo.maintained == "true" &&
-					<div
-						role="button"
-						className="d-flex align-items-center"
-						onClick={() => {
-							setIsCreatingTask(true);
-						}}
-					>
-						<h2>Добавить задачу</h2>
-						<img src={addIcon} className="icon" />
-					</div> }
-					{projectInfo.tasks == projectInfo.done && projectInfo.tasks != 0 && projectInfo.maintained == "true" ? (
+				<div className="d-flex justify-content-evenly text-center align-items-center">
+					<h1 id="name">
+						{isProjectInfoLoading ? "-------" : projectInfo.name}
+					</h1>
+					{projectInfo.maintained == true && (
 						<div
 							role="button"
-							className="d-flex align-items-center"
-							onClick={() => { setIsArchivingProject(true) }}
-						>
-							<h2>Архивировать проект</h2>
-							<img src={archiveIcon} className="icon" />
-						</div>
-					) : (
-						<div
-							role="button"
-							className="d-flex align-items-center"
+							className="d-flex align-items-center button"
 							onClick={() => {
-								setIsDeletingProject(true);
+								setIsCreatingTask(true);
 							}}
 						>
-							<h2>Удалить проект</h2>
-							<img src={removeIcon} className="icon" />
+							<h2>Добавить задачу</h2>
+							<img src={addIcon} className="icon" />
 						</div>
 					)}
+					{(() => {
+						if (!isProjectInfoLoading) {
+							if (projectInfo.maintained == true) {
+								if (tasksCount != 0) {
+									return (
+										<>
+											<div
+												role="button"
+												className="d-flex align-items-center button"
+												onClick={() => {
+													setIsArchivingProject(true);
+												}}
+											>
+												<h2>Архивировать проект</h2>
+												<img
+													src={archiveIcon}
+													className="icon"
+												/>
+											</div>
+											<div
+												role="button"
+												className="d-flex align-items-center button"
+												onClick={() => {
+													setIsDeletingProject(true);
+												}}
+											>
+												<h2>Удалить проект</h2>
+												<img
+													src={removeIcon}
+													className="icon"
+												/>
+											</div>
+										</>
+									);
+								} else {
+									return (
+										<div
+											role="button"
+											className="d-flex align-items-center button"
+											onClick={() => {
+												setIsDeletingProject(true);
+											}}
+										>
+											<h2>Удалить проект</h2>
+											<img
+												src={removeIcon}
+												className="icon"
+											/>
+										</div>
+									);
+								}
+							} else {
+								return (
+									<div
+										role="button"
+										className="d-flex align-items-center button"
+										onClick={() => {
+											setIsDeletingProject(true);
+										}}
+									>
+										<h2>Удалить проект</h2>
+										<img
+											src={removeIcon}
+											className="icon"
+										/>
+									</div>
+								);
+							}
+						}
+					})()}
 				</div>
 				<hr className="hr" />
-				<div className="row">
-					<div className="col">
-						<p className="sec">Backlog</p>
-						<div id="plan-body">{notStarted}</div>
+				{isProjectInfoLoading ? (
+					<ScaleLoader
+						color="#14fe17"
+						style={{
+							marginTop: "2rem",
+							marginInline: "auto",
+							display: "table",
+						}}
+					/>
+				) : (
+					<div className="row">
+						<div className="col">
+							<p className="sec">Backlog</p>
+							<div id="plan-body">{backlogTasks}</div>
+						</div>
+						<div className="col">
+							<p className="sec">In progress</p>
+							<div id="progress-body">{workTasks}</div>
+						</div>
+						<div className="col">
+							<p className="sec">Done</p>
+							<div id="done-body">{doneTasks}</div>
+						</div>
 					</div>
-					<div className="col">
-						<p className="sec">In progress</p>
-						<div id="progress-body">{inProgress}</div>
-					</div>
-					<div className="col">
-						<p className="sec">Done</p>
-						<div id="done-body">{done}</div>
-					</div>
-				</div>
+				)}
 			</div>
 		</>
 	);

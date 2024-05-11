@@ -1,16 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
+import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-export const Login = (props) => {
+export const Register = (props) => {
 	const [isSubmiting, setIsSubmiting] = useState(false);
 	const [message, setMessage] = useState("");
 	const navigate = useNavigate();
 
-	const login = async () => {
+	const register = async () => {
 		try {
 			setIsSubmiting(true);
-			let response = await axios.post("/api/v1/user/login", {
+			let response = await axios.post("/api/v1/user/register", {
+				name: document.getElementById("name").value,
 				email: document.getElementById("email").value,
 				password: document.getElementById("password").value,
 			});
@@ -19,16 +21,22 @@ export const Login = (props) => {
 			if (err.response.status == 400) {
 				setMessage("Невалидные данные!");
 			}
-			if (err.response.status == 401) {
-				setMessage("Неверная почта или пароль!");
-			}
 			setIsSubmiting(false);
 		}
 	};
 
 	return (
 		<div className="form">
-			<h1>Приветствую, Товарищ!</h1>
+			<h1>Добро пожаловать в Коллектив 2.0!</h1>
+			<div class="mb-3">
+				<label class="form-label">Имя</label>
+				<input
+					type="name"
+					class="form-control"
+					id="name"
+					disabled={isSubmiting}
+				/>
+			</div>
 			<div class="mb-3">
 				<label class="form-label">Почта</label>
 				<input
@@ -50,12 +58,12 @@ export const Login = (props) => {
 			<p>{message}</p>
 			<button
 				class="btn btn-success m-2"
-				onClick={async () => {
-					login();
+				onClick={() => {
+					register();
 				}}
 				disabled={isSubmiting}
 			>
-				Вход
+				Регистрация
 			</button>
 		</div>
 	);
