@@ -72,10 +72,10 @@ const getTasksStats = async (project) => {
 			status: "done",
 		},
 	});
-	if (tasks == 0 && done == 0) {
+	if (tasks.length == 0 && done.length == 0) {
 		return 0;
 	}
-	return Math.round(done / tasks);
+	return Math.round((done.length / tasks.length) * 100);
 };
 
 const getTask = async (id, project) => {
@@ -105,6 +105,8 @@ const updateTask = async (id, project, status) => {
 		where: {
 			id: id,
 			project: project,
+		},
+		data: {
 			status: status,
 		},
 	});
@@ -138,6 +140,15 @@ const getPermission = async (user, project) => {
 		},
 	});
 	return permission;
+};
+
+const createPermission = async (user, project) => {
+	await prisma.permissions.create({
+		data: {
+			user: user,
+			project: project,
+		},
+	});
 };
 
 const checkAuth = async (currentsession) => {
@@ -281,4 +292,5 @@ module.exports = {
 	getUsers,
 	getUserSafe,
 	updatePassword,
+	createPermission,
 };

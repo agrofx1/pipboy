@@ -14,6 +14,7 @@ const {
 	createProject,
 	getTasksStats,
 	createTask,
+	createPermission,
 } = require("../database");
 const Joi = require("joi");
 
@@ -24,7 +25,12 @@ const taskscheme = Joi.object({
 });
 const projectscheme = Joi.object({
 	title: Joi.string().min(3).required(),
-	users: Joi.array().required(),
+	users: Joi.array().items(
+		Joi.object({
+			id: Joi.number().required(),
+			name: Joi.string(),
+		})
+	),
 });
 
 router.use(express.json());
@@ -57,21 +63,28 @@ router.get("/archive", async (req, res) => {
 });
 
 router.post("/create", async (req, res) => {
-	try {
-		let auth = await checkAuth(req.cookies.session);
-		if (auth !== false) {
-			try {
-				let data = await projectscheme.validateAsync(req.body);
-				let id = await createProject(data.name, auth);
-			} catch {
-				res.status(400).json({ success: false });
-			}
-		} else {
-			res.status(401).json({ success: false });
+	// try {
+	let auth = await checkAuth(req.cookies.session);
+	if (auth !== false) {
+		// try {
+		console.log(req.body.users);
+		let data = await projectscheme.validateAsync(req.body);
+		let project = await createProject(data.title, auth);
+		console.log(data);
+		for (let user of data.users) {
+			console.log("USER" + user.id);
+			await createPermission(user.id, project.id);
 		}
-	} catch {
-		res.status(500).json({ success: false });
+		res.json({ success: true });
+		// } catch {
+		// 	res.status(400).json({ success: false });
+		// }
+	} else {
+		res.status(401).json({ success: false });
 	}
+	// } catch {
+	// 	res.status(500).json({ success: false });
+	// }
 });
 
 router.get("/:id", async (req, res) => {
@@ -106,9 +119,12 @@ router.get("/:id", async (req, res) => {
 
 router.post("/:id/:taskid/work", async (req, res) => {
 	try {
-		let project = await getProject(req.params.id);
+		let project = await getProject(parseInt(req.params.id));
 		if (project != null && project.maintained == true) {
-			let task = await getTask(req.params.id, req.params.taskid);
+			let task = await getTask(
+				parseInt(req.params.taskid),
+				parseInt(req.params.id)
+			);
 			if (task != null) {
 				if (req.cookies.session != undefined) {
 					let auth = await checkAuth(req.cookies.session);
@@ -116,8 +132,8 @@ router.post("/:id/:taskid/work", async (req, res) => {
 						let permission = await getPermission(auth, project.id);
 						if (permission != null || project.owner === auth) {
 							await updateTask(
-								req.params.taskid,
-								req.params.id,
+								parseInt(req.params.taskid),
+								parseInt(req.params.id),
 								"work"
 							);
 							res.json({ success: true });
@@ -141,25 +157,30 @@ router.post("/:id/:taskid/work", async (req, res) => {
 
 router.post("/:id/:taskid/done", async (req, res) => {
 	try {
-		let project = await getProject(req.params.id);
+		let project = await getProject(parseInt(req.params.id));
 		if (project != null && project.maintained == true) {
-			let task = await getTask(req.params.id, req.params.taskid);
+			let task = await getTask(
+				parseInt(req.params.taskid),
+				parseInt(req.params.id)
+			);
 			if (task != null) {
-				let auth = await checkAuth(req.cookies.session);
-				if (auth !== false) {
-					let permission = await getPermission(auth, project.id);
-					if (permission != null || project.owner === auth) {
-						await updateTask(
-							req.params.taskid,
-							req.params.id,
-							"done"
-						);
-						res.json({ success: true });
+				if (req.cookies.session != undefined) {
+					let auth = await checkAuth(req.cookies.session);
+					if (auth !== false) {
+						let permission = await getPermission(auth, project.id);
+						if (permission != null || project.owner === auth) {
+							await updateTask(
+								parseInt(req.params.taskid),
+								parseInt(req.params.id),
+								"done"
+							);
+							res.json({ success: true });
+						} else {
+							res.status(403).json({ success: false });
+						}
 					} else {
-						res.status(403).json({ success: false });
+						res.status(401).json({ success: false });
 					}
-				} else {
-					res.status(401).json({ success: false });
 				}
 			} else {
 				res.status(404).json({ success: false });
@@ -265,14 +286,14 @@ router.delete("/:id/delete", async (req, res) => {
 
 router.get("/:id/archive", async (req, res) => {
 	try {
-		let project = await getProject(req.params.id);
+		let project = await getProject(parseInt(req.params.id));
 		if (project != null) {
 			let auth = await checkAuth(req.cookies.session);
 			if (auth === false) {
 				res.status(401).json({ success: false });
 			} else {
 				if (project.owner === auth) {
-					await archiveProject(req.params.id);
+					await archiveProject(parseInt(req.params.id));
 					res.json({ success: true });
 				} else {
 					res.status(403).json({ success: false });
