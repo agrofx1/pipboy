@@ -58,7 +58,9 @@ router.post("/login", async (req, res) => {
 			if (isSame) {
 				let session = await crypto.randomBytes(32).toString("hex");
 				await createSession(session, user.id);
-				res.cookie("session", session);
+				res.cookie("session", session, {
+					maxAge: 90 * 24 * 60 * 60 * 1000,
+				});
 				res.json({ success: true });
 			} else {
 				res.status(401).json("Invalid login or password");
@@ -78,7 +80,9 @@ router.post("/register", async (req, res) => {
 		let user = await createUser(data.name, data.email, password);
 		let session = await crypto.randomBytes(32).toString("hex");
 		await createSession(session, user.id);
-		res.cookie("session", session);
+		res.cookie("session", session, {
+			maxAge: 90 * 24 * 60 * 60 * 1000,
+		});
 		res.json({ success: true });
 	} catch {
 		res.status(400).json({ success: false });
